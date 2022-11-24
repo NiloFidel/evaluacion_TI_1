@@ -44,10 +44,6 @@ class Linea:
         _ordenada = self.primer_punto.ordenada - self.segundo_punto.ordenada
         return Punto(_abscisa, _ordenada)
 
-    def punto_fuera_de_linea():
-
-        print()
-
     def es_perpendicular(self, _param_punto):
         _vector_principal = self.vector_principal()
         _segundo_vector = self.segundo_vector(_param_punto)
@@ -60,8 +56,13 @@ class Linea:
             return False
 
     def linea_incluye_punto(self, _param_punto):
+        # En la ecuacion de una recta se reemplaza la abscisa y la ordenada del parametro punto
+        # Nota: Es diferente que un punto este en la proyecion de una linea a que el punto este contenido en una line que tiene punto de inicio y punto final
+        # EJM: una vector que va de (0,0) a (3,0) contiene en su ecuacion lineal a (4,0) pero no lo contiene necesariamente
 
-        if (((_param_punto.ordenada - self.primer_punto.ordenada) * (self.segundo_punto.abscisa - self.primer_punto.abscisa)) - ((self.segundo_punto.ordenada - self.primer_punto.ordenada) * (_param_punto.abscisa - self.primer_punto.abscisa)) == 0):
+        _calculo_linea_incluye_punto = ((_param_punto.ordenada - self.primer_punto.ordenada) * (self.segundo_punto.abscisa - self.primer_punto.abscisa)) - (
+            (self.segundo_punto.ordenada - self.primer_punto.ordenada) * (_param_punto.abscisa - self.primer_punto.abscisa))
+        if (_calculo_linea_incluye_punto == 0):
             return True
         else:
             return False
@@ -71,6 +72,9 @@ class Linea:
         _segundo_vector = self.segundo_vector(_param_punto)
         _tercer_vector = self.tercer_vector(_param_punto)
         if ((_vector_principal.abscisa * _segundo_vector.abscisa) + (_vector_principal.ordenada * _segundo_vector.ordenada) == 0):
+            _aux = self.primer_punto
+            self.primer_punto = self.segundo_punto
+            self.segundo_punto = _aux
             return Punto(_vector_principal.abscisa + _param_punto.abscisa, _vector_principal.ordenada + _param_punto.ordenada)
         elif ((_vector_principal.abscisa * _tercer_vector.abscisa) + (_vector_principal.ordenada * _tercer_vector.ordenada) == 0):
             _vector_principal = self.invertir_vector_principal()
@@ -82,15 +86,16 @@ class Rectangulo:
         self.linea = _param_linea
         self.punto_explicito = _param_punto_explicito
         self.punto_implicito = _param_punto_implicito
+
     def vertices_en_lista(self):
         lista_vertices = []
         _punto1 = self.linea.primer_punto
         lista_vertices.append(_punto1)
-        _punto2 = self.linea.primer_punto
+        _punto2 = self.linea.segundo_punto
         lista_vertices.append(_punto2)
         _punto3 = self.punto_explicito
         lista_vertices.append(_punto3)
-        _punto4 = self.linea.primer_punto
+        _punto4 = self.punto_implicito
         lista_vertices.append(_punto4)
         return lista_vertices
 
@@ -104,8 +109,28 @@ def registrar_punto(contador, mensaje):
     print("")
     print("Registro del punto "+str(contador)+" "+mensaje)
     _abscisa = int(input("Ingrese abscisa del punto: "))
-    _ordenada = int(input("Ingrese abscisa del punto: "))
+    _ordenada = int(input("Ingrese ordenada del punto: "))
     return Punto(_abscisa, _ordenada)
+
+
+def calcular_entrechoque(_param_list1, _param_list2):
+    _bandera_entrechoque = False
+    for i in range(len(_param_list1)-1):
+        _linea = Linea(_param_list1[i], _param_list1[i+1])
+        for j in range(len(_param_list2)):
+            _punto_dentro_de_la_linea = _linea.linea_incluye_punto(
+                _param_list2[j])
+            if (_punto_dentro_de_la_linea == True):
+                # corroborar que el punto este contenido en el vector (linea es infinito, vector tiene punto_inicio y punto_final)
+                _distancia_vector = _param_list1[i].distancia_otro_punto(
+                    _param_list1[i+1])
+                _distancia_1 = _param_list2[j].distancia_otro_punto(
+                    _param_list1[i])
+                _distancia_2 = _param_list2[j].distancia_otro_punto(
+                    _param_list1[i+1])
+                if (_distancia_vector == _distancia_1 + _distancia_2):
+                    _bandera_entrechoque = True
+    return _bandera_entrechoque
 
 
 def menu():
@@ -124,6 +149,8 @@ def menu():
         _var_punto_explicito)
     _var_rectangulo1 = Rectangulo(
         _var_linea1, _var_punto_explicito, _var_punto_implicito)
+    print("")
+    print("Los vertices consecutivos del primer rectangulo son")
     _var_rectangulo1.mostrar_rectangulo()
 
     print("===============REGISTRO DEL SEGUNDO RECTANGULO================")
@@ -141,28 +168,34 @@ def menu():
         _var_punto_explicito)
     _var_rectangulo2 = Rectangulo(
         _var_linea1, _var_punto_explicito, _var_punto_implicito)
+    print("")
+    print("Los vertices consecutivos del segundo rectangulo son")
     _var_rectangulo2.mostrar_rectangulo()
 
-    #Calculo del entrechoque de rectangulos
+    # Calculo del entrechoque de rectangulos
     _lista_vertices_rectangulo1 = _var_rectangulo1.vertices_en_lista()
     _lista_vertices_rectangulo2 = _var_rectangulo2.vertices_en_lista()
-    print(_lista_vertices_rectangulo1[0].abscisa)
-    print(_lista_vertices_rectangulo2[1].ordenada)
 
-    _bandera_entrechoque = False
-    for i in range(len(_lista_vertices_rectangulo1)-1):
-        _linea = Linea(_lista_vertices_rectangulo1[i],_lista_vertices_rectangulo1[i+1])
-        for j in range(len(_lista_vertices_rectangulo2)):
-            _bandera_entrechoque = _bandera_entrechoque or _linea.linea_incluye_punto(_lista_vertices_rectangulo2[j])
-    
-    for i in range(len(_lista_vertices_rectangulo2)-1):
-        _linea = Linea(_lista_vertices_rectangulo2[i],_lista_vertices_rectangulo2[i+1])
-        for j in range(len(_lista_vertices_rectangulo1)):
-            _bandera_entrechoque = _bandera_entrechoque or _linea.linea_incluye_punto(_lista_vertices_rectangulo1[j])
+    _bandera_entrechoque = calcular_entrechoque(
+        _lista_vertices_rectangulo1, _lista_vertices_rectangulo2)
+    _bandera_entrechoque = calcular_entrechoque(
+        _lista_vertices_rectangulo2, _lista_vertices_rectangulo1)
 
-    if(_bandera_entrechoque == True):
-        print("Los rectangulos se entrechocan por lo menos en un punto!")
+    if (_bandera_entrechoque == True):
+        print("")
+        print(">>>>>>>>>>>>>>>>>>>>>>>> LOS RECTANGULOS SE ENTRECHOCAN POR LO MENOS EN UN PUNTO!")
+        print("")
+        print(">>>>>>>>>>>>>>>>>>>>>>>> PUEDES COMPROBARLO GRAFICANDO LOS VERTICES QUE AGREGASTE")
+        print("")
+        print("Primer rectangulo:")
+        _var_rectangulo1.mostrar_rectangulo()
+        print("")
+        print("Segundo rectangulo:")
+        _var_rectangulo2.mostrar_rectangulo()
+
     else:
-        print("Los rectangulos no se entrechocan.")
+        print("")
+        print("LOS RECTANGULOS NO SE ENTRECHOCAN.")
+
 
 menu()
